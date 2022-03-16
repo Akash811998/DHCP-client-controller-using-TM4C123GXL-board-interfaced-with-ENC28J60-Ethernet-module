@@ -101,22 +101,23 @@ void dhcpEnable()
 void dhcpDisable()
 {
     dhcpState = DHCP_DISABLED;
+    setRequestBit(1);
     //reset all values
-    uint8_t dummy[IP_ADD_LENGTH] = {0,0,0,0};
-    etherSetIpAddress(dummy);
-    etherSetIpSubnetMask(dummy);
-    etherSetIpGatewayAddress(dummy);
-    etherSetIpDnsAddress(dummy);
-    etherSetIpTimeServerAddress(dummy);
-    dhcpRequestRelease();
-    //stop all timers
-    stopTimer((_callback)discovertimer);
-    stopTimer((_callback)requesttimer);
-    stopTimer((_callback)arptimer);
-    stopTimer((_callback)renewtimer);
-    stopTimer((_callback)renewRequestTimer);
-    stopTimer((_callback)rebindtimer);
-    stopTimer((_callback)leasetimer);
+//    uint8_t dummy[IP_ADD_LENGTH] = {0,0,0,0};
+//    etherSetIpAddress(dummy);
+//    etherSetIpSubnetMask(dummy);
+//    etherSetIpGatewayAddress(dummy);
+//    etherSetIpDnsAddress(dummy);
+//    etherSetIpTimeServerAddress(dummy);
+//    //dhcpRequestRelease();
+//    //stop all timers
+//    stopTimer((_callback)discovertimer);
+//    stopTimer((_callback)requesttimer);
+//    stopTimer((_callback)arptimer);
+//    stopTimer((_callback)renewtimer);
+//    stopTimer((_callback)renewRequestTimer);
+//    stopTimer((_callback)rebindtimer);
+//    stopTimer((_callback)leasetimer);
 
     // set state to disabled, stop all timers
 }
@@ -227,7 +228,7 @@ void dhcpSendMessage(etherHeader *ether, uint8_t type) //this is generic for sen
     dhcp->htype=0x01; //hardware address type which denotes 10mb ethernet
     dhcp->hlen=6;  //6 for 10mb ethernet
     dhcp->hops=0;
-    dhcp->xid=htonl(0x76465376);    ////make sure the transmitted and received values are same. this can be a random number and you have to make sure that the values are same when it is sent and received
+    dhcp->xid=htonl(0x76465375);    ////make sure the transmitted and received values are same. this can be a random number and you have to make sure that the values are same when it is sent and received
     dhcp->secs=0;
     dhcp->flags=htons(0x8000);  //the first bit is for broadcast
     if(state==DHCP_RENEWING ||  state==DHCP_REBINDING)
@@ -455,7 +456,7 @@ bool dhcpIsOffer(etherHeader *ether, uint8_t ipOfferedAdd[])
 //    ok &= (dhcp->chaddr[3] == 117);
 
     // return true if destport=68 and sourceport=67, op=2, xid correct, and offer msg
-    ok &=(udp->sourcePort==htons(67) && udp->destPort==htons(68) && dhcp->op==2 && dhcp->xid==htonl(0x76465376));
+    ok &=(udp->sourcePort==htons(67) && udp->destPort==htons(68) && dhcp->op==2 && dhcp->xid==htonl(0x76465375));
     //ok &=(dhcp->options[0] == 53) && (dhcp->options[2] == DHCPOFFER);
     off=((uint8_t*)getOption(ether,53,1));
     if((*off)==DHCPOFFER)
@@ -518,7 +519,7 @@ bool dhcpIsAck(etherHeader *ether)
     ok &= (dhcp->chaddr[4] == 6);
     ok &= (dhcp->chaddr[5] == 117);
 
-    ok &=(udp->sourcePort==htons(67) && udp->destPort==htons(68) && dhcp->op==2 && dhcp->xid==htonl(0x76465376));
+    ok &=(udp->sourcePort==htons(67) && udp->destPort==htons(68) && dhcp->op==2 && dhcp->xid==htonl(0x76465375));
     //ok &=(dhcp->options[0] == 53) && (dhcp->options[2] == DHCPACK);
 
     ack=getOption(ether,53,1);
@@ -626,6 +627,27 @@ void dhcpSendPendingMessages(etherHeader *ether) // this is the only place where
     else if(state==DHCP_REBINDING)
     {
         dhcpSendMessage(ether,DHCP_REBINDING);
+    }
+    else if(state==DHCP_DISABLED && (getRequestBit()==1))
+    {
+        dhcpSendMessage(ether,DHCP_RELEASE);
+        uint8_t dummy[IP_ADD_LENGTH] = {0,0,0,0};
+        etherSetIpAddress(dummy);
+        etherSetIpSubnetMask(dummy);
+        etherSetIpGatewayAddress(dummy);
+        etherSetIpDnsAddress(dummy);
+        etherSetIpTimeServerAddress(dummy);
+        //dhcpRequestRelease();
+        //stop all timers
+        stopTimer((_callback)discovertimer);
+        stopTimer((_callback)requesttimer);
+        stopTimer((_callback)arptimer);
+        stopTimer((_callback)renewtimer);
+        stopTimer((_callback)renewRequestTimer);
+        stopTimer((_callback)rebindtimer);
+        stopTimer((_callback)leasetimer);
+        setRequestBit(0);
+
     }
     else if(state==DHCP_RELEASE)
     {

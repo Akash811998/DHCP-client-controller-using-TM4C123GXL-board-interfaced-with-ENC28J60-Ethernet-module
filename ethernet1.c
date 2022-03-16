@@ -462,7 +462,7 @@ int main(void)
         processShell();
 
         // DHCP maintenance
-        if (dhcpIsEnabled())
+        if (dhcpIsEnabled() || getRequestBit())
         {
             dhcpSendPendingMessages(data); //where discovery, request and release is sent depending upon the state. check for states and then change th state
             //variables as required
