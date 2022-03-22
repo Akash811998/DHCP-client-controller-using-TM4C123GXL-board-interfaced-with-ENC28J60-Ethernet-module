@@ -228,7 +228,7 @@ void dhcpSendMessage(etherHeader *ether, uint8_t type) //this is generic for sen
     dhcp->htype=0x01; //hardware address type which denotes 10mb ethernet
     dhcp->hlen=6;  //6 for 10mb ethernet
     dhcp->hops=0;
-    dhcp->xid=htonl(0x76465375);    ////make sure the transmitted and received values are same. this can be a random number and you have to make sure that the values are same when it is sent and received
+    dhcp->xid=htonl(0x76986374);    ////make sure the transmitted and received values are same. this can be a random number and you have to make sure that the values are same when it is sent and received
     dhcp->secs=0;
     dhcp->flags=htons(0x8000);  //the first bit is for broadcast
     if(state==DHCP_RENEWING ||  state==DHCP_REBINDING)
@@ -281,13 +281,13 @@ void dhcpSendMessage(etherHeader *ether, uint8_t type) //this is generic for sen
         dhcp->options[j++]=DHCPDISCOVER; //for DHCP DISCOEVR MESSAGE
         dhcp->options[j++]=61; //client identifier address
         dhcp->options[j++]=7;
-        dhcp->options[j++]=0x01; //this is the MAC address of my device
-        dhcp->options[j++]=0x02;
-        dhcp->options[j++]=0x03;
-        dhcp->options[j++]=0x04;
-        dhcp->options[j++]=0x05;
-        dhcp->options[j++]=0x06;
-        dhcp->options[j++]=0xAB;
+        dhcp->options[j++]=0x01;
+        dhcp->options[j++]=mac[0]; //this is the MAC address of my device
+        dhcp->options[j++]=mac[1];
+        dhcp->options[j++]=mac[2];
+        dhcp->options[j++]=mac[3];
+        dhcp->options[j++]=mac[4];
+        dhcp->options[j++]=mac[5];
         dhcp->options[j++]=55;  //parameter request list
         dhcp->options[j++]=8; // length
         dhcp->options[j++]=1;  // subnet mask
@@ -306,12 +306,12 @@ void dhcpSendMessage(etherHeader *ether, uint8_t type) //this is generic for sen
         dhcp->options[j++]=61; //client identifier address
         dhcp->options[j++]=7;
         dhcp->options[j++]=0x01;
-        dhcp->options[j++]=0x02;
-        dhcp->options[j++]=0x03;
-        dhcp->options[j++]=0x04;
-        dhcp->options[j++]=0x05;
-        dhcp->options[j++]=0x06;
-        dhcp->options[j++]=0xAB;
+        dhcp->options[j++]=mac[0]; //this is the MAC address of my device
+        dhcp->options[j++]=mac[1];
+        dhcp->options[j++]=mac[2];
+        dhcp->options[j++]=mac[3];
+        dhcp->options[j++]=mac[4];
+        dhcp->options[j++]=mac[5];
         dhcp->options[j++]=50; //requested IP address
         dhcp->options[j++]=0x4;
         dhcp->options[j++]=dhcpOfferedIpAdd[0];
@@ -346,13 +346,27 @@ void dhcpSendMessage(etherHeader *ether, uint8_t type) //this is generic for sen
         dhcp->options[j++]=61; //client identifier address
         dhcp->options[j++]=7;
         dhcp->options[j++]=0x01;
-        dhcp->options[j++]=0x02;
-        dhcp->options[j++]=0x03;
-        dhcp->options[j++]=0x04;
-        dhcp->options[j++]=0x05;
-        dhcp->options[j++]=0x06;
-        dhcp->options[j++]=0xAB;
+        dhcp->options[j++]=mac[0]; //this is the MAC address of my device
+        dhcp->options[j++]=mac[1];
+        dhcp->options[j++]=mac[2];
+        dhcp->options[j++]=mac[3];
+        dhcp->options[j++]=mac[4];
+        dhcp->options[j++]=mac[5];
         dhcp->options[j++]=255;
+    }
+    else if(type==DHCP_DECLINE)
+    {
+        dhcp->options[j++]=DHCPDECLINE;  //for dhcp release
+         dhcp->options[j++]=61; //client identifier address
+         dhcp->options[j++]=7;
+         dhcp->options[j++]=0x01;
+         dhcp->options[j++]=mac[0]; //this is the MAC address of my device
+         dhcp->options[j++]=mac[1];
+         dhcp->options[j++]=mac[2];
+         dhcp->options[j++]=mac[3];
+         dhcp->options[j++]=mac[4];
+         dhcp->options[j++]=mac[5];
+         dhcp->options[j++]=255;
     }
     if(((j+1)&2)==1) //padding
     {
@@ -445,8 +459,8 @@ bool dhcpIsOffer(etherHeader *ether, uint8_t ipOfferedAdd[])
     dhcpFrame* dhcp = (dhcpFrame*)&udp->data;
     uint8_t* off;
     bool ok;
-    uint32_t sum=0;
-    uint16_t tmp16=0;
+    //uint32_t sum=0;
+   // uint16_t tmp16=0;
     ok  = (ip->protocol == 17);   //checkign if it is a UDPs
 //    ok &= (dhcp->chaddr[0] == 2);
 //    ok &= (dhcp->chaddr[1] == 3);
@@ -456,7 +470,7 @@ bool dhcpIsOffer(etherHeader *ether, uint8_t ipOfferedAdd[])
 //    ok &= (dhcp->chaddr[3] == 117);
 
     // return true if destport=68 and sourceport=67, op=2, xid correct, and offer msg
-    ok &=(udp->sourcePort==htons(67) && udp->destPort==htons(68) && dhcp->op==2 && dhcp->xid==htonl(0x76465375));
+    ok &=(udp->sourcePort==htons(67) && udp->destPort==htons(68) && dhcp->op==2 && dhcp->xid==htonl(0x76986374));
     //ok &=(dhcp->options[0] == 53) && (dhcp->options[2] == DHCPOFFER);
     off=((uint8_t*)getOption(ether,53,1));
     if((*off)==DHCPOFFER)
@@ -519,7 +533,7 @@ bool dhcpIsAck(etherHeader *ether)
     ok &= (dhcp->chaddr[4] == 6);
     ok &= (dhcp->chaddr[5] == 117);
 
-    ok &=(udp->sourcePort==htons(67) && udp->destPort==htons(68) && dhcp->op==2 && dhcp->xid==htonl(0x76465375));
+    ok &=(udp->sourcePort==htons(67) && udp->destPort==htons(68) && dhcp->op==2 && dhcp->xid==htonl(0x76986374));
     //ok &=(dhcp->options[0] == 53) && (dhcp->options[2] == DHCPACK);
 
     ack=getOption(ether,53,1);
@@ -595,7 +609,7 @@ void dhcpHandleAck(etherHeader *ether)
     T1=lease/2;
     T2=(7*lease)/8;
 
-    // stop new address needed timer, t1 timer, t2 timer
+    // stop new address needed, t1 timer, t2 timer
     // start t1, t2, and lease end timers
 }
 
@@ -717,8 +731,8 @@ void dhcpProcessArpResponse(etherHeader *ether)
     if(ok)
     {
         stopTimer((_callback)arptimer);
-        dhcpState=DHCP_RELEASE;
-        dhcpSendMessage(ether,DHCP_RELEASE);
+        dhcpState=DHCP_DECLINE;
+        dhcpSendMessage(ether,DHCP_DECLINE);
         dhcpState=DHCP_INIT;
     }
     // if in conflict resolution, if a response matches the offered add,

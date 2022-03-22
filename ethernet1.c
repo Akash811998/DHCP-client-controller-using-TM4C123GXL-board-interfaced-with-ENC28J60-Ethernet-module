@@ -151,7 +151,7 @@ void displayConnectionInfo()
         if (i < 6-1)
             putcUart0(':');
     }
-    putcUart0('\n');
+    putcUart0('\n\r');
     etherGetIpAddress(ip);
     putsUart0("  IP:    ");
     for (i = 0; i < 4; i++)
@@ -165,7 +165,7 @@ void displayConnectionInfo()
         putsUart0(" (dhcp)");
     else
         putsUart0(" (static)");
-    putcUart0('\n');
+    putcUart0('\n\r');
     etherGetIpSubnetMask(ip);
     putsUart0("  SN:    ");
     for (i = 0; i < 4; i++)
@@ -175,7 +175,7 @@ void displayConnectionInfo()
         if (i < 4-1)
             putcUart0('.');
     }
-    putcUart0('\n');
+    putcUart0('\n\r');
     etherGetIpGatewayAddress(ip);
     putsUart0("  GW:    ");
     for (i = 0; i < 4; i++)
@@ -185,7 +185,7 @@ void displayConnectionInfo()
         if (i < 4-1)
             putcUart0('.');
     }
-    putcUart0('\n');
+    putcUart0('\n\r');
     etherGetIpDnsAddress(ip);
     putsUart0("  DNS:   ");
     for (i = 0; i < 4; i++)
@@ -195,7 +195,7 @@ void displayConnectionInfo()
         if (i < 4-1)
             putcUart0('.');
     }
-    putcUart0('\n');
+    putcUart0('\n\r');
     etherGetIpTimeServerAddress(ip);
     putsUart0("  Time:  ");
     for (i = 0; i < 4; i++)
@@ -205,7 +205,7 @@ void displayConnectionInfo()
         if (i < 4-1)
             putcUart0('.');
     }
-    putcUart0('\n');
+    putcUart0('\n\r');
     if (dhcpIsEnabled())
     {
         putsUart0("  Lease: ");
@@ -349,7 +349,7 @@ void processShell()
                 {
                     for (i = 0; i < 4; i++)
                     {
-                        token = strtok(NULL, " .");
+                        token = strtok(NULL, ".");
                         ip[i] = asciiToUint8(token);
                     }
                     etherSetIpAddress(ip);
@@ -360,7 +360,7 @@ void processShell()
                 {
                     for (i = 0; i < 4; i++)
                     {
-                        token = strtok(NULL, " .");
+                        token = strtok(NULL, ".");
                         ip[i] = asciiToUint8(token);
                     }
                     etherSetIpSubnetMask(ip);
@@ -371,7 +371,7 @@ void processShell()
                 {
                     for (i = 0; i < 4; i++)
                     {
-                        token = strtok(NULL, " .");
+                        token = strtok(NULL, ".");
                         ip[i] = asciiToUint8(token);
                     }
                     etherSetIpGatewayAddress(ip);
@@ -382,7 +382,7 @@ void processShell()
                 {
                     for (i = 0; i < 4; i++)
                     {
-                        token = strtok(NULL, " .");
+                        token = strtok(NULL, ".");
                         ip[i] = asciiToUint8(token);
                     }
                     etherSetIpDnsAddress(ip);
@@ -393,7 +393,7 @@ void processShell()
                 {
                     for (i = 0; i < 4; i++)
                     {
-                        token = strtok(NULL, " .");
+                        token = strtok(NULL, ".");
                         ip[i] = asciiToUint8(token);
                     }
                     etherSetIpTimeServerAddress(ip);
@@ -487,6 +487,10 @@ int main(void)
                 // Handle ARP response
                 if (etherIsArpResponse(data))
                 {
+//                    if(dhcpGetState()==DHCP_TESTING_IP)
+//                    {
+//
+//                    }
                     dhcpProcessArpResponse(data);
 //                    if(dhcpGetState()==DHCP_TESTING_IP)
 //                        setRequestBit(1);
@@ -495,7 +499,12 @@ int main(void)
                 // Handle IP datagram
                 if (etherIsIp(data))
                 {
-                    if (etherIsIpUnicast(data))
+                    if (etherIsUdp(data))
+                    {
+                        if (etherIsDhcpResponse(data))
+                            dhcpProcessDhcpResponse(data); //where offer is sent
+                    }
+                    else if(etherIsIpUnicast(data))
                     {
                         // Handle ICMP ping request
                         if (etherIsPingRequest(data))
@@ -518,12 +527,6 @@ int main(void)
                                 setPinValue(GREEN_LED, 0);
                             etherSendUdpResponse(data, (uint8_t*)"Received", 9);
                         }
-                    }
-                    else
-                    {
-                        if (etherIsUdp(data))
-                            if (etherIsDhcpResponse(data))
-                                dhcpProcessDhcpResponse(data); //where offer is sent
                     }
                 }
             }

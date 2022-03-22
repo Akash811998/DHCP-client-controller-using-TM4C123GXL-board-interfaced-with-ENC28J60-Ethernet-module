@@ -51,7 +51,7 @@
 #define DHCP_INITREBOOT 8 // not used since ip not stored over reboot
 #define DHCP_REBOOTING  9 // not used since ip not stored over reboot
 
-//#define DHCP_DECLINE      10
+#define DHCP_DECLINE      10
 #define DHCP_RELEASE      11
 
 //-----------------------------------------------------------------------------
