@@ -151,7 +151,7 @@ void displayConnectionInfo()
         if (i < 6-1)
             putcUart0(':');
     }
-    putcUart0('\n\r');
+    putsUart0("\n\r");
     etherGetIpAddress(ip);
     putsUart0("  IP:    ");
     for (i = 0; i < 4; i++)
@@ -165,7 +165,7 @@ void displayConnectionInfo()
         putsUart0(" (dhcp)");
     else
         putsUart0(" (static)");
-    putcUart0('\n\r');
+    putsUart0("\n\r");
     etherGetIpSubnetMask(ip);
     putsUart0("  SN:    ");
     for (i = 0; i < 4; i++)
@@ -175,7 +175,7 @@ void displayConnectionInfo()
         if (i < 4-1)
             putcUart0('.');
     }
-    putcUart0('\n\r');
+    putsUart0("\n\r");
     etherGetIpGatewayAddress(ip);
     putsUart0("  GW:    ");
     for (i = 0; i < 4; i++)
@@ -185,7 +185,7 @@ void displayConnectionInfo()
         if (i < 4-1)
             putcUart0('.');
     }
-    putcUart0('\n\r');
+    putsUart0("\n\r");
     etherGetIpDnsAddress(ip);
     putsUart0("  DNS:   ");
     for (i = 0; i < 4; i++)
@@ -195,7 +195,7 @@ void displayConnectionInfo()
         if (i < 4-1)
             putcUart0('.');
     }
-    putcUart0('\n\r');
+    putsUart0("\n\r");
     etherGetIpTimeServerAddress(ip);
     putsUart0("  Time:  ");
     for (i = 0; i < 4; i++)
@@ -205,7 +205,7 @@ void displayConnectionInfo()
         if (i < 4-1)
             putcUart0('.');
     }
-    putcUart0('\n\r');
+    putsUart0("\n\r");
     if (dhcpIsEnabled())
     {
         putsUart0("  Lease: ");
@@ -218,6 +218,7 @@ void displayConnectionInfo()
         m = s / 60;
         sprintf(str, "%ud;%02uh:%02um\r", d, h, m);
         putsUart0(str);
+        putsUart0("\n\r");
     }
     if (etherIsLinkUp())
         putsUart0("\rLink is up\n\r");

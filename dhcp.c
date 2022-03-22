@@ -37,8 +37,9 @@ uint8_t dhcpServerIpAdd[4]={0,0,0,0};
 
 uint32_t T1=0;
 uint32_t T2=0;
-uint32_t lease;
+//uint32_t lease;
 bool requestBit;
+uint32_t lease=0;
 
 //uint8_t* getv; //used to return getOption data
 
@@ -423,10 +424,11 @@ uint8_t* getOption(etherHeader *ether, uint8_t option, uint8_t length)
     bool flag=0;
     while(!(dhcp->options[i]==255) && flag==0)
     {
-        if((dhcp->options[i]==3 || dhcp->options[i]==4 || dhcp->options[i]==6) && dhcp->options[i]==option)  //for dns, gw and time server as they have  variable lengths
+        if((dhcp->options[i]==3 || dhcp->options[i]==4 || dhcp->options[i]==6 || dhcp->options[i]==51) && dhcp->options[i]==option)  //for dns, gw and time server as they have  variable lengths
         {
             flag=1;
             i+=2;
+            break;
         }
         else if(dhcp->options[i]==option)
         {
@@ -434,6 +436,7 @@ uint8_t* getOption(etherHeader *ether, uint8_t option, uint8_t length)
             {
                 flag=1;
                 i++; //refer to the options value
+                break;
             }
         }
         else
@@ -566,9 +569,9 @@ void dhcpHandleAck(etherHeader *ether)
     udpHeader* udp = (udpHeader*)((uint8_t*)ip + ((ip->revSize & 0xF) * 4));
     dhcpFrame* dhcp = (dhcpFrame*)&udp->data;
     //uint8_t* extract[];
-    uint32_t lease=0;
+
     uint8_t i;
-    uint8_t l1,l2,l3,l4;
+    uint32_t l1,l2,l3,l4;
     // extract offered IP address
     for (i = 0; i < IP_ADD_LENGTH; i++)
     {
@@ -598,8 +601,8 @@ void dhcpHandleAck(etherHeader *ether)
     l3=leaseTime[2];
     l4=leaseTime[3];
 
-    lease=(0x000000FF & l1) | (0x0000FF00 & l2) | (0xFF0000 & l3) | (0xFF000000 & l4);
-
+//    lease=(0x000000FF & l1) | (0x0000FF00 & l2) | (0x00FF0000 & l3) | (0xFF000000 & l4);
+    lease=(l1<<24)|(l2<<16)|(l3<<8)|(l4);
 //    leaseTime=getOption(ether,58,4);
 //    T1=(0xFF & *(leaseTime+3)) | (0xFF00 & *(leaseTime+2)) (0xFF0000 & *(leaseTime+1)) | (0xFF000000 & *(leaseTime+0));
 //
@@ -696,7 +699,7 @@ void dhcpProcessDhcpResponse(etherHeader *ether)
         {
             stopTimer((_callback)requesttimer);
             dhcpHandleAck(ether);
-            etherSendArpRequest(ether,dhcpOfferedIpAdd,dhcpServerIpAdd);
+            etherSendArpRequest(ether,dhcpOfferedIpAdd,dhcpOfferedIpAdd);
             dhcpState=DHCP_TESTING_IP;
             startOneshotTimer((_callback)arptimer,2); //don't know how many seconds
             //dhcpSendMessage(ether,53);
