@@ -20,11 +20,11 @@
 // Device includes, defines, and assembler directives
 //-----------------------------------------------------------------------------
 
+#include <spi0.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "tm4c123gh6pm.h"
 #include "gpio.h"
-#include "spi0.h"
 
 // Pins
 #define SSI0TX PORTA,5

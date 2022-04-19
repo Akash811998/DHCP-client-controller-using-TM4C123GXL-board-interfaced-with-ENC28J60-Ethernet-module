@@ -110,6 +110,9 @@ void arptimer()
     startOneshotTimer((_callback)renewtimer,getT1());
     startOneshotTimer((_callback)rebindtimer,getT2());
     startOneshotTimer((_callback)leasetimer,getLease());
+////    startOneshotTimer((_callback)renewtimer,5);
+//    startOneshotTimer((_callback)rebindtimer,10);
+////  startOneshotTimer((_callback)leasetimer,15);
 
 }
 

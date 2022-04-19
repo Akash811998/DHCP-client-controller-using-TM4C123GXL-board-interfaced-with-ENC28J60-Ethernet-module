@@ -37,7 +37,6 @@ uint8_t dhcpServerIpAdd[4]={0,0,0,0};
 
 uint32_t T1=0;
 uint32_t T2=0;
-//uint32_t lease;
 bool requestBit;
 uint32_t lease=0;
 
@@ -188,7 +187,7 @@ void dhcpSendMessage(etherHeader *ether, uint8_t type) //this is generic for sen
     ip->protocol = 17;
     ip->headerChecksum = 0;
 
-    if(state==DHCP_RENEWING  || state==DHCP_RELEASE)
+    if(state==DHCP_RENEWING  || type==DHCPRELEASE || type==DHCPDECLINE)
     {
         uint8_t temp[4];
         etherGetIpAddress(temp);
@@ -398,13 +397,13 @@ void dhcpSendMessage(etherHeader *ether, uint8_t type) //this is generic for sen
     //udp checksum, pseduoheader header contains IP source and dest address and protocol
     udpLength=(8 + 240 + j);
     udp->length = htons(udpLength);
-    etherSumWords(ip->sourceIp,8,&sum);
+    etherSumWords(ip->sourceIp,8,&sum); //PSEUDOHEADER=SOURCE IP+DEST IP+ PROTOCOL+ PADDING LENGTH(WHICH IS THE LENGTH OF THE UDP HEADER)
     tmp16 = ip->protocol;
     sum += (tmp16 & 0xff) << 8;
-    etherSumWords(&udp->length, 2, &sum);
+    etherSumWords(&udp->length, 2, &sum); //PADDING LENGTH IS ADDED FIRST
     udp->check = 0; //making this zero so that when calculating checksum for udp header, the value of the checksum is not considered
     //calculate checksum for whole udp header and the data(which inclides dhcp)
-    etherSumWords(udp, udpLength, &sum);
+    etherSumWords(udp, udpLength, &sum); //THE WHOLE UDP HEADER IS ADDDED TO THE CHECKSUM
     udp->check = getEtherChecksum(sum);
     // send packet with size = ether hdr + ip header + udp hdr + dhcp_size
 
@@ -713,6 +712,9 @@ void dhcpProcessDhcpResponse(etherHeader *ether)
             startOneshotTimer((_callback)renewtimer,getT1());
             startOneshotTimer((_callback)rebindtimer,getT2());
             startOneshotTimer((_callback)leasetimer,getLease());
+            //            startOneshotTimer((_callback)renewtimer,getT1());
+            //                      startOneshotTimer((_callback)rebindtimer,getT2());
+            //                      startOneshotTimer((_callback)leasetimer,getLease());
         }
     }
 
@@ -733,9 +735,15 @@ void dhcpProcessArpResponse(etherHeader *ether)
 
     if(ok)
     {
+        uint8_t dummy[IP_ADD_LENGTH] = {0,0,0,0};
         stopTimer((_callback)arptimer);
         dhcpState=DHCP_DECLINE;
         dhcpSendMessage(ether,DHCP_DECLINE);
+        etherSetIpAddress(dummy);
+        etherSetIpSubnetMask(dummy);
+        etherSetIpGatewayAddress(dummy);
+        etherSetIpDnsAddress(dummy);
+        etherSetIpTimeServerAddress(dummy);
         dhcpState=DHCP_INIT;
     }
     // if in conflict resolution, if a response matches the offered add,

@@ -36,12 +36,12 @@
 #define INT PORTC,6
 
 // Ether registers
-#define ERDPTL      0x00
-#define ERDPTH      0x01
-#define EWRPTL      0x02
-#define EWRPTH      0x03
-#define ETXSTL      0x04
-#define ETXSTH      0x05
+#define ERDPTL      0x00    //READ POINTER LOW
+#define ERDPTH      0x01    //READ POINTER HIGH
+#define EWRPTL      0x02    //WRITE POINTER LOW
+#define EWRPTH      0x03    //WRITE POINTER HIGH
+#define ETXSTL      0x04    //TRANSMIT BUFFER START LOCATION LOW
+#define ETXSTH      0x05    //TRANSMIT BUFFER START LOCATION HIGH
 #define ETXNDL      0x06
 #define ETXNDH      0x07
 #define ERXSTL      0x08
@@ -246,14 +246,15 @@ void etherWriteMemStop(void)
 
 void etherReadMemStart(void)
 {
-    etherCsOn();
-    writeSpi0Data(0x3A);
-    readSpi0Data();
+    etherCsOn();    //switch on CS
+    writeSpi0Data(0x3A);  // 3A because the opcode and argument of read buffer memory is 3A
+                          //send the command to to ethernet module to say that we want to read from read buffer memory
+    readSpi0Data();  //then from the SPI data  register read the data which has come
 }
 
 uint8_t etherReadMem(void)
 {
-    writeSpi0Data(0);
+    writeSpi0Data(0);  //to get the byte we need to write a 0 to it to gte the byte
     return readSpi0Data();
 }
 
@@ -371,14 +372,14 @@ bool etherIsLinkUp(void)
 // Returns TRUE if packet received
 bool etherIsDataAvailable(void)
 {
-    return ((etherReadReg(EIR) & PKTIF) != 0);
+    return ((etherReadReg(EIR) & PKTIF) != 0);   //if PKTIF is set, then still there are one or more unprocessed packets in the buffer or the receive counter is non zero
 }
 
 // Returns true if rx buffer overflowed after correcting the problem
 bool etherIsOverflow(void)
 {
     bool err;
-    err = (etherReadReg(EIR) & RXERIF) != 0;
+    err = (etherReadReg(EIR) & RXERIF) != 0;   //RXERIF states that  A packet was aborted because there is insufficient buffer space or the packet count is 255
     if (err)
         etherClearReg(EIR, RXERIF);
     return err;
@@ -427,7 +428,8 @@ uint16_t etherGetPacket(etherHeader *ether, uint16_t maxSize)
     etherWriteReg(ERDPTH, nextPacketMsb);
 
     // decrement packet counter so that PKTIF is maintained correctly
-    etherSetReg(ECON2, PKTDEC);
+    etherSetReg(ECON2, PKTDEC);  //hardware increments the packet counter, we decrement it
+                                 //whenever the packet count is not zero, an interrupt it issued to the host saying that theres a packet available
 
     return size;
 }
